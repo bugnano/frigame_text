@@ -382,6 +382,7 @@
 				}
 
 				ctx.font = font.CSSString;
+				ctx.textBaseline = 'top';
 
 				if (stroke) {
 					stroke_color.setStrokeStyle(ctx, this);
@@ -402,5 +403,27 @@
 	});
 
 	fg.Text = fg.Maker(fg.PText);
+
+	fg.extend(fg.PSpriteGroup, {
+		addText: function (name, options) {
+			var
+				text = fg.Text(name, options, this.name)
+			;
+
+			this.layers.push({name: name, obj: text});
+
+			return this;
+		},
+
+		insertText: function (name, options) {
+			var
+				text = fg.Text(name, options, this.name)
+			;
+
+			this.layers.unshift({name: name, obj: text});
+
+			return this;
+		}
+	});
 }(friGame));
 
