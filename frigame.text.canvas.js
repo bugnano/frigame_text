@@ -27,52 +27,6 @@
 (function (fg) {
 	'use strict';
 
-	fg.extend(fg.PGradient, {
-		setFillStyle: function (ctx, group) {
-			var
-				width = group.width,
-				height = group.height,
-				dimension
-			;
-
-			if (this.fillStyle) {
-				// Solid color
-				ctx.fillStyle = this.fillStyle;
-			} else {
-				// Gradient
-				if (this.type === fg.GRADIENT_HORIZONTAL) {
-					dimension = width;
-				} else {
-					dimension = height;
-				}
-
-				ctx.fillStyle = this.gradients[dimension].fillStyle;
-			}
-		},
-
-		setStrokeStyle: function (ctx, group) {
-			var
-				width = group.width,
-				height = group.height,
-				dimension
-			;
-
-			if (this.fillStyle) {
-				// Solid color
-				ctx.strokeStyle = this.fillStyle;
-			} else {
-				// Gradient
-				if (this.type === fg.GRADIENT_HORIZONTAL) {
-					dimension = width;
-				} else {
-					dimension = height;
-				}
-
-				ctx.strokeStyle = this.gradients[dimension].fillStyle;
-			}
-		}
-	});
-
 	// ******************************************************************** //
 	// ******************************************************************** //
 	// ******************************************************************** //
@@ -293,6 +247,7 @@
 				old_stroke_color = old_options.strokeColor,
 				fill_color_changed = fill_color !== old_fill_color,
 				stroke_color_changed = stroke_color !== old_stroke_color,
+				size_changed = (width !== old_options.width) || (height !== old_options.height),
 				angle = options.angle,
 				scaleh = options.scaleh,
 				scalev = options.scalev,
@@ -302,8 +257,8 @@
 			;
 
 			if (fg.insidePlayground(this) && text && font && alpha && scaleh && scalev && !options.hidden && (fill_color || stroke)) {
-				if (fill_color_changed || stroke_color_changed) {
-					if (fill_color_changed) {
+				if (fill_color_changed || stroke_color_changed || size_changed) {
+					if (fill_color_changed || size_changed) {
 						if (old_fill_color && old_fill_color.removeGroup) {
 							old_fill_color.removeGroup(this);
 						}
@@ -315,7 +270,7 @@
 						old_options.fill_color = fill_color;
 					}
 
-					if (stroke_color_changed) {
+					if (stroke_color_changed || size_changed) {
 						if (old_stroke_color && old_stroke_color.removeGroup) {
 							old_stroke_color.removeGroup(this);
 						}
@@ -329,32 +284,6 @@
 
 					old_options.width = width;
 					old_options.height = height;
-				} else {
-					if ((width !== old_options.width) || (height !== old_options.height)) {
-						// Reset the colors in order to create new ones with the new width and height
-						if (fill_color) {
-							if (fill_color.removeGroup) {
-								fill_color.removeGroup(this);
-							}
-
-							if (fill_color.addGroup) {
-								fill_color.addGroup(this);
-							}
-						}
-
-						if (stroke_color) {
-							if (stroke_color.removeGroup) {
-								stroke_color.removeGroup(this);
-							}
-
-							if (stroke_color.addGroup) {
-								stroke_color.addGroup(this);
-							}
-						}
-
-						old_options.width = width;
-						old_options.height = height;
-					}
 				}
 
 				ctx.save();
