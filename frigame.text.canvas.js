@@ -132,6 +132,8 @@
 
 			this.old_options = {};
 
+			this.gradients = {};
+
 			// If the text has not been defined, force
 			// the text to null in order to resize and move
 			// the sprite inside setText
@@ -260,26 +262,44 @@
 				if (fill_color_changed || stroke_color_changed || size_changed) {
 					if (fill_color_changed || size_changed) {
 						if (old_fill_color && old_fill_color.removeGroup) {
-							old_fill_color.removeGroup(this);
+							this.gradients[old_fill_color.name] -= 1;
+							if (size_changed || (!this.gradients[old_fill_color.name])) {
+								old_fill_color.removeGroup(this);
+							}
 						}
 
 						if (fill_color && fill_color.addGroup) {
+							if (!this.gradients[fill_color.name]) {
+								this.gradients[fill_color.name] = 1;
+							} else {
+								this.gradients[fill_color.name] += 1;
+							}
+
 							fill_color.addGroup(this);
 						}
 
-						old_options.fill_color = fill_color;
+						old_options.fillColor = fill_color;
 					}
 
 					if (stroke_color_changed || size_changed) {
 						if (old_stroke_color && old_stroke_color.removeGroup) {
-							old_stroke_color.removeGroup(this);
+							this.gradients[old_stroke_color.name] -= 1;
+							if (size_changed || (!this.gradients[old_stroke_color.name])) {
+								old_stroke_color.removeGroup(this);
+							}
 						}
 
 						if (stroke_color && stroke_color.addGroup) {
+							if (!this.gradients[stroke_color.name]) {
+								this.gradients[stroke_color.name] = 1;
+							} else {
+								this.gradients[stroke_color.name] += 1;
+							}
+
 							stroke_color.addGroup(this);
 						}
 
-						old_options.stroke_color = stroke_color;
+						old_options.strokeColor = stroke_color;
 					}
 
 					old_options.width = width;
