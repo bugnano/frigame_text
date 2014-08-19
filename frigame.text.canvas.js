@@ -275,7 +275,7 @@
 								this.gradients[fill_color.name] += 1;
 							}
 
-							fill_color.addGroup(this);
+							fill_color.addGroup(ctx, this);
 						}
 
 						old_options.fillColor = fill_color;
@@ -296,7 +296,7 @@
 								this.gradients[stroke_color.name] += 1;
 							}
 
-							stroke_color.addGroup(this);
+							stroke_color.addGroup(ctx, this);
 						}
 
 						old_options.strokeColor = stroke_color;
