@@ -259,7 +259,7 @@
 				stroke_width = (stroke_color && options.strokeWidth) || 0,
 				stroke_half_width = stroke_width / 2,
 				target_width = width + stroke_width,
-				target_height = height + stroke_width,
+				target_height = (height * 2) + stroke_width,
 				old_fill_color = old_options.fillColor,
 				old_stroke_color = old_options.strokeColor,
 				fill_color_changed = fill_color !== old_fill_color,
