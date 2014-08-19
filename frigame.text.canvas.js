@@ -106,7 +106,8 @@
 		init: function (name, options, parent) {
 			var
 				my_options,
-				new_options = options || {}
+				new_options = options || {},
+				canvas
 			;
 
 			if (this.options) {
@@ -133,6 +134,15 @@
 			this.old_options = {};
 
 			this.gradients = {};
+
+			canvas = document.createElement('canvas');
+			canvas.width = 16;
+			canvas.height = 16;
+
+			this.canvas = canvas;
+			this.canvas_width = 16;
+			this.canvas_height = 16;
+			this.ctx = canvas.getContext('2d');
 
 			// If the text has not been defined, force
 			// the text to null in order to resize and move
@@ -206,9 +216,10 @@
 				my_options.strokeWidth = new_options.strokeWidth * 2;
 			}
 
+			text = my_options.text;
+			font = my_options.font;
+
 			if (text_redefined || font_redefined) {
-				text = my_options.text;
-				font = my_options.font;
 				if (text && font) {
 					ctx.save();
 					ctx.font = font.CSSString;
@@ -224,6 +235,10 @@
 				fg.PBaseSprite.resize.call(this, new_options);
 			}
 
+			if (text && font && (my_options.fillColor || (my_options.strokeColor && my_options.strokeWidth))) {
+				this.needsPrerender = true;
+			}
+
 			return this;
 		},
 
@@ -235,16 +250,16 @@
 			var
 				options = this.options,
 				old_options = this.old_options,
-				left = this.left,
-				top = this.top,
 				width = this.width,
 				height = this.height,
 				text = options.text,
 				font = options.font,
 				fill_color = options.fillColor,
 				stroke_color = options.strokeColor,
-				stroke_width = options.strokeWidth,
-				stroke = stroke_color && stroke_width,
+				stroke_width = (stroke_color && options.strokeWidth) || 0,
+				stroke_half_width = stroke_width / 2,
+				target_width = width + stroke_width,
+				target_height = height + stroke_width,
 				old_fill_color = old_options.fillColor,
 				old_stroke_color = old_options.strokeColor,
 				fill_color_changed = fill_color !== old_fill_color,
@@ -255,10 +270,12 @@
 				scalev = options.scalev,
 				alpha = options.alpha,
 				old_alpha,
-				ctx = fg.ctx
+				ctx = fg.ctx,
+				canvas = this.canvas,
+				my_ctx = this.ctx
 			;
 
-			if (fg.insidePlayground(this) && text && font && alpha && scaleh && scalev && !options.hidden && (fill_color || stroke)) {
+			if (fg.insidePlayground(this) && text && font && alpha && scaleh && scalev && !options.hidden && (fill_color || stroke_width)) {
 				if (fill_color_changed || stroke_color_changed || size_changed) {
 					if (fill_color_changed || size_changed) {
 						if (old_fill_color && old_fill_color.removeGroup) {
@@ -275,7 +292,7 @@
 								this.gradients[fill_color.name] += 1;
 							}
 
-							fill_color.addGroup(ctx, this);
+							fill_color.addGroup(my_ctx, this);
 						}
 
 						old_options.fillColor = fill_color;
@@ -296,7 +313,7 @@
 								this.gradients[stroke_color.name] += 1;
 							}
 
-							stroke_color.addGroup(ctx, this);
+							stroke_color.addGroup(my_ctx, this);
 						}
 
 						old_options.strokeColor = stroke_color;
@@ -306,22 +323,45 @@
 					old_options.height = height;
 				}
 
+				if (this.needsPrerender) {
+					this.needsPrerender = false;
+
+					if (this.canvas_width < target_width) {
+						canvas.width = target_width;
+						this.canvas_width = target_width;
+					}
+
+					if (this.canvas_height < target_height) {
+						canvas.height = target_height;
+						this.canvas_height = target_height;
+					}
+
+					my_ctx.clearRect(0, 0, target_width, target_height);
+					my_ctx.font = font.CSSString;
+					my_ctx.textBaseline = 'top';
+
+					if (stroke_width) {
+						stroke_color.setStrokeStyle(my_ctx, this);
+						my_ctx.lineWidth = stroke_width;
+						my_ctx.strokeText(text, 0, 0);
+					}
+
+					if (fill_color) {
+						fill_color.setFillStyle(my_ctx, this);
+						my_ctx.fillText(text, 0, 0);
+					}
+				}
+
 				ctx.save();
 
-				if (angle || (scaleh !== 1) || (scalev !== 1)) {
-					ctx.translate(this.centerx, this.centery);
+				ctx.translate(this.centerx, this.centery);
 
-					if (angle) {
-						ctx.rotate(angle);
-					}
+				if (angle) {
+					ctx.rotate(angle);
+				}
 
-					if ((scaleh !== 1) || (scalev !== 1)) {
-						ctx.scale(scaleh, scalev);
-					}
-
-					ctx.translate(-this.halfWidth, -this.halfHeight);
-				} else if (left || top) {
-					ctx.translate(left, top);
+				if ((scaleh !== 1) || (scalev !== 1)) {
+					ctx.scale(scaleh, scalev);
 				}
 
 				old_alpha = fg.globalAlpha;
@@ -330,19 +370,18 @@
 					ctx.globalAlpha = fg.globalAlpha;
 				}
 
-				ctx.font = font.CSSString;
-				ctx.textBaseline = 'top';
-
-				if (stroke) {
-					stroke_color.setStrokeStyle(ctx, this);
-					ctx.lineWidth = stroke_width;
-					ctx.strokeText(text, 0, 0);
-				}
-
-				if (fill_color) {
-					fill_color.setFillStyle(ctx, this);
-					ctx.fillText(text, 0, 0);
-				}
+				fg.safeDrawImage(
+					ctx,
+					canvas,
+					0,
+					0,
+					target_width,
+					target_height,
+					-(this.halfWidth + stroke_half_width),
+					-(this.halfHeight + stroke_half_width),
+					target_width,
+					target_height
+				);
 
 				ctx.restore();
 
