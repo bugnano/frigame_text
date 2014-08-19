@@ -337,18 +337,19 @@
 					}
 
 					my_ctx.clearRect(0, 0, target_width, target_height);
+					my_ctx.lineJoin = 'round';
 					my_ctx.font = font.CSSString;
 					my_ctx.textBaseline = 'top';
 
 					if (stroke_width) {
 						stroke_color.setStrokeStyle(my_ctx, this);
 						my_ctx.lineWidth = stroke_width;
-						my_ctx.strokeText(text, 0, 0);
+						my_ctx.strokeText(text, stroke_half_width, stroke_half_width);
 					}
 
 					if (fill_color) {
 						fill_color.setFillStyle(my_ctx, this);
-						my_ctx.fillText(text, 0, 0);
+						my_ctx.fillText(text, stroke_half_width, stroke_half_width);
 					}
 				}
 
