@@ -52,13 +52,13 @@
 			this.canvas_height = 16;
 			this.ctx = canvas.getContext('2d');
 
+			this.needsPrerender = false;
+
 			overrides.PText.init.apply(this, arguments);
 
 			this.old_options = {};
 
 			this.gradients = {};
-
-			this.needsPrerender = false;
 		},
 
 		// Public functions
