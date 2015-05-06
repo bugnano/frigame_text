@@ -1,7 +1,7 @@
 /*global friGame */
 /*jslint white: true, browser: true */
 
-// Copyright (c) 2011-2014 Franco Bugnano
+// Copyright (c) 2011-2015 Franco Bugnano
 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -27,113 +27,21 @@
 (function (fg) {
 	'use strict';
 
-	// ******************************************************************** //
-	// ******************************************************************** //
-	// ******************************************************************** //
-	// ******************************************************************** //
-	// ******************************************************************** //
+	var
+		overrides = {}
+	;
 
-	fg.PFont = {
-		init: function (options) {
-			var
-				my_options,
-				new_options = options || {}
-			;
+	overrides.PText = fg.pick(fg.PText, [
+		'init',
+		'remove',
+		'setText'
+	]);
 
-			if (this.options) {
-				my_options = this.options;
-			} else {
-				my_options = {};
-				this.options = my_options;
-			}
-
-			// Set default options
-			fg.extend(my_options, {
-				// Public options
-				style: 'normal',		// normal, italic, oblique
-				weight: 'normal',		// normal, bold, bolder, lighter, 100, 200, 300, 400, 500, 600, 700, 800, 900
-				size: 10,				// px
-				family: 'sans-serif'
-
-				// Implementation details
-			});
-
-			// TO DO -- The line-height property should be calculated here in order to be consistent with an eventual DOM text backend
-
-			new_options = fg.extend(my_options, fg.pick(new_options, [
-				'style',
-				'weight',
-				'size',
-				'family'
-			]));
-
-			fg.extend(this, fg.pick(my_options, [
-				'style',
-				'weight',
-				'size',
-				'family'
-			]));
-
-			this.CSSString = [my_options.style, ' ', String(my_options.weight), ' ', String(my_options.size), 'px ', my_options.family].join('');
-		}
-
-		// Public functions
-
-		// Implementation details
-	};
-
-	fg.Font = fg.Maker(fg.PFont);
-
-	fg.resourceManager.addFont = function (name) {
-		var
-			args = Array.prototype.slice.call(arguments, 1),
-			font = fg.Font.apply(this, args)
-		;
-
-		font.name = name;
-
-		return fg.resourceManager.addResource(name, font);
-	};
-
-	// ******************************************************************** //
-	// ******************************************************************** //
-	// ******************************************************************** //
-	// ******************************************************************** //
-	// ******************************************************************** //
-
-	fg.PText = Object.create(fg.PBaseSprite);
 	fg.extend(fg.PText, {
 		init: function (name, options, parent) {
 			var
-				my_options,
-				new_options = options || {},
 				canvas
 			;
-
-			if (this.options) {
-				my_options = this.options;
-			} else {
-				my_options = {};
-				this.options = my_options;
-			}
-
-			// Set default options
-			fg.extend(my_options, {
-				// Public options
-				text: null,
-				font: null,
-				fillColor: null,
-				strokeColor: null,
-				strokeWidth: 2
-
-				// Implementation details
-			});
-
-			fg.PBaseSprite.init.apply(this, arguments);
-
-			this.old_options = {};
-
-			this.gradients = {};
 
 			canvas = document.createElement('canvas');
 			canvas.width = 16;
@@ -144,14 +52,13 @@
 			this.canvas_height = 16;
 			this.ctx = canvas.getContext('2d');
 
-			// If the text has not been defined, force
-			// the text to null in order to resize and move
-			// the sprite inside setText
-			if (new_options.text === undefined) {
-				new_options.text = null;
-			}
+			overrides.PText.init.apply(this, arguments);
 
-			this.setText(new_options);
+			this.old_options = {};
+
+			this.gradients = {};
+
+			this.needsPrerender = false;
 		},
 
 		// Public functions
@@ -182,69 +89,38 @@
 				stroke_color.removeGroup(this);
 			}
 
-			fg.PBaseSprite.remove.apply(this, arguments);
+			overrides.PText.remove.apply(this, arguments);
 		},
 
 		setText: function (options) {
 			var
-				my_options = this.options,
-				new_options = options || {},
-				text,
-				font,
-				text_redefined = new_options.text !== undefined,
-				font_redefined = new_options.font !== undefined,
-				ctx = fg.ctx
+				my_options = this.options
 			;
 
-			if (text_redefined) {
-				my_options.text = new_options.text;
-			}
+			overrides.PText.setText.apply(this, arguments);
 
-			if (font_redefined) {
-				my_options.font = fg.r[new_options.font];
-			}
-
-			if (new_options.fillColor !== undefined) {
-				my_options.fillColor = fg.r[new_options.fillColor];
-			}
-
-			if (new_options.strokeColor !== undefined) {
-				my_options.strokeColor = fg.r[new_options.strokeColor];
-			}
-
-			if (new_options.strokeWidth !== undefined) {
-				my_options.strokeWidth = new_options.strokeWidth * 2;
-			}
-
-			text = my_options.text;
-			font = my_options.font;
-
-			if (text_redefined || font_redefined) {
-				if (text && font) {
-					ctx.save();
-					ctx.font = font.CSSString;
-					new_options.width = ctx.measureText(text).width;
-					new_options.height = font.size;
-					ctx.restore();
-				} else {
-					new_options.width = 0;
-					new_options.height = 0;
-				}
-
-				// Call the resize method with all the options in order to update the position
-				fg.PBaseSprite.resize.call(this, new_options);
-			}
-
-			if (text && font && (my_options.fillColor || (my_options.strokeColor && my_options.strokeWidth))) {
+			if (my_options.text && my_options.font && (my_options.fillColor || (my_options.strokeColor && my_options.strokeWidth))) {
 				this.needsPrerender = true;
 			}
 
 			return this;
 		},
 
-		resize: null,	// Text cannot be explicitly resized
-
 		// Implementation details
+
+		calcWidth: function (font, text) {
+			var
+				ctx = fg.ctx,
+				width
+			;
+
+			ctx.save();
+			ctx.font = font.CSSString;
+			width = ctx.measureText(text).width;
+			ctx.restore();
+
+			return width;
+		},
 
 		draw: function () {
 			var
@@ -388,30 +264,6 @@
 
 				fg.globalAlpha = old_alpha;
 			}
-		}
-	});
-
-	fg.Text = fg.Maker(fg.PText);
-
-	fg.extend(fg.PSpriteGroup, {
-		addText: function (name, options) {
-			var
-				text = fg.Text(name, options, this.name)
-			;
-
-			this.layers.push({name: name, obj: text});
-
-			return this;
-		},
-
-		insertText: function (name, options) {
-			var
-				text = fg.Text(name, options, this.name)
-			;
-
-			this.layers.unshift({name: name, obj: text});
-
-			return this;
 		}
 	});
 }(friGame));
