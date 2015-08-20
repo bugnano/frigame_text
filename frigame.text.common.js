@@ -78,7 +78,12 @@
 				'family'
 			]));
 
-			this.CSSString = [my_options.style, ' ', String(my_options.weight), ' ', String(my_options.size), 'px/', String(my_options.size), 'px ', my_options.family].join('');
+			if (navigator.isCocoonJS) {
+				// Ugly user agent sniffing in order to support CocoonJS poor font string implementation
+				this.CSSString = [String(my_options.size), 'px ', my_options.family].join('');
+			} else {
+				this.CSSString = [my_options.style, ' ', String(my_options.weight), ' ', String(my_options.size), 'px/', String(my_options.size), 'px ', my_options.family].join('');
+			}
 		},
 
 		// Public functions
