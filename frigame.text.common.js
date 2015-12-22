@@ -1,5 +1,5 @@
 /*global friGame */
-/*jslint white: true, browser: true */
+/*jshint bitwise: true, curly: true, eqeqeq: true, esversion: 3, forin: true, freeze: true, funcscope: true, futurehostile: true, iterator: true, latedef: true, noarg: true, nocomma: true, nonbsp: true, nonew: true, notypeof: false, shadow: outer, singleGroups: false, strict: true, undef: true, unused: true, varstmt: false, eqnull: false, plusplus: true, browser: true, laxbreak: true, laxcomma: true */
 
 // Copyright (c) 2011-2015 Franco Bugnano
 
@@ -78,8 +78,8 @@
 				'family'
 			]));
 
-			if (navigator.isCocoonJS) {
-				// Ugly user agent sniffing in order to support CocoonJS poor font string implementation
+			if ((window.ejecta) || (navigator.isCocoonJS)) {
+				// Ugly user agent sniffing in order to support the poor font string implementation of Ejecta and CocoonJS
 				this.CSSString = [String(my_options.size), 'px ', my_options.family].join('');
 			} else {
 				this.CSSString = [my_options.style, ' ', String(my_options.weight), ' ', String(my_options.size), 'px/', String(my_options.size), 'px ', my_options.family].join('');
